@@ -32,4 +32,4 @@ jobs:
         unzip da_data_repo.zip
     - name: Run test
       run: |
-        python run ch00-tech-prep/test_env.py
+        python ch00-tech-prep/test_env.py
