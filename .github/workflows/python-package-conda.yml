@@ -42,5 +42,6 @@ jobs:
 
       - name: Run tests
         run: |
+          conda init
           conda activate daenv
           python ch00-tech-prep/test_env.py
