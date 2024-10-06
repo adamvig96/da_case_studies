@@ -25,13 +25,11 @@ jobs:
             ${{ runner.os }}-conda-
 
       - name: Install Conda and set up environment
+      - uses: s-weigand/setup-conda@v1
+    
+      - name: Add conda to system path
         run: |
-          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-          bash miniconda.sh -b -p $HOME/miniconda
-          source "$HOME/miniconda/etc/profile.d/conda.sh"
-          conda init bash
-          conda config --set always_yes yes
-          conda update -q conda
+          echo $CONDA/bin >> $GITHUB_PATH
           conda env create -f daenv.yml
 
       - name: Download da_data_repo
@@ -41,6 +39,5 @@ jobs:
 
       - name: Run tests
         run: |
-          source $HOME/miniconda/etc/profile.d/conda.sh
           conda activate daenv
           python ch00-tech-prep/test_env.py
