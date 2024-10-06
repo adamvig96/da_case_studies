@@ -1,43 +1,36 @@
-name: CI with Conda
+name: Python Package using Conda
 
 on: [push]
 
 jobs:
-  build:
+  build-linux:
     runs-on: macos-12
+    strategy:
+      max-parallel: 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12' 
+        
+    - uses: s-weigand/setup-conda@v1
+    
+    - name: Add conda to system path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo $CONDA/bin >> $GITHUB_PATH
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
-      - name: Install Conda
-        uses: s-weigand/setup-conda@v1
-
-      - name: Cache Conda environment
-        id: cache-conda
-        uses: actions/cache@v3
-        with:
-          path: ~/.conda/envs
-          key: ${{ runner.os }}-conda-${{ hashFiles('daenv.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-conda-
-
-      - name: Update environment
-        run: conda env update -n daenv -f daenv.yml
-        if: steps.cache.outputs.cache-hit != 'true'
-
-      - name: Download da_data_repo
-        run: |
-          curl -L0 https://osf.io/download/9gw4a/ --output da_data_repo.zip
-          unzip da_data_repo.zip
-
-      - name: Run tests
-        run: |
-          conda init zsh
-          conda activate daenv
-          python ch00-tech-prep/test_env.py
+    - name: Install dependencies
+      run: |
+        $CONDA/bin/conda env update --file daenv.yml
+        
+    - name: Download da_data_repo
+      run: |
+        curl -L0 https://osf.io/download/9gw4a/ --output da_data_repo.zip
+        unzip da_data_repo.zip
+    - name: Run test
+      run: |
+        conda activate daenv
+        python ch00-tech-prep/test_env.py
