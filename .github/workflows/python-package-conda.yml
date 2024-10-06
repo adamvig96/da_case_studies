@@ -1,49 +1,46 @@
-name: Python Package using Conda
+name: CI with Conda
 
 on: [push]
 
-env:
-  CACHE_NUMBER: 0  # increase to reset cache manually
-
 jobs:
-  build-linux:
+  build:
     runs-on: macos-12
-    strategy:
-      max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12' 
-    - uses: s-weigand/setup-conda@v1
-    
-    - name: Add conda to system path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
-        
-    - name: Install dependencies
-      run: |
-        $CONDA/bin/conda env update --file daenv.yml --name base
-    - uses: actions/cache@v2
-      with:
-          path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('daenv.yml') }}-${{ env.CACHE_NUMBER }}
-      id: cache
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Update environment
-      run: $CONDA/bin/conda env update -n base -f daenv.yml
-      if: steps.cache.outputs.cache-hit != 'true'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
 
-        
-    - name: Download da_data_repo
-      run: |
-        curl -L0 https://osf.io/download/9gw4a/ --output da_data_repo.zip
-        unzip da_data_repo.zip
-        
-    - name: Run test
-      run: |
-        python ch00-tech-prep/test_env.py
+      - name: Cache Conda environment
+        id: cache-conda
+        uses: actions/cache@v3
+        with:
+          path: ~/.conda/envs
+          key: ${{ runner.os }}-conda-${{ hashFiles('daenv.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-conda-
+
+      - name: Install Conda and set up environment
+        run: |
+          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+          bash miniconda.sh -b -p $HOME/miniconda
+          source "$HOME/miniconda/etc/profile.d/conda.sh"
+          conda init bash
+          conda config --set always_yes yes
+          conda update -q conda
+          conda env create -f daenv.yml
+
+      - name: Download da_data_repo
+        run: |
+          curl -L0 https://osf.io/download/9gw4a/ --output da_data_repo.zip
+          unzip da_data_repo.zip
+
+      - name: Run tests
+        run: |
+          source $HOME/miniconda/etc/profile.d/conda.sh
+          conda activate daenv
+          python ch00-tech-prep/test_env.py
