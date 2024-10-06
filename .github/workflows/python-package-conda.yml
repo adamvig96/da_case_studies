@@ -15,6 +15,13 @@ jobs:
         with:
           python-version: 3.12
 
+      - name: Install Conda
+        uses: s-weigand/setup-conda@v1
+    
+      - name: Install dependencies
+        run: |
+          conda env create -f daenv.yml
+
       - name: Cache Conda environment
         id: cache-conda
         uses: actions/cache@v3
@@ -24,13 +31,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-conda-
 
-      - name: Install Conda and set up environment
-        uses: s-weigand/setup-conda@v1
-    
-      - name: Add conda to system path
-        run: |
-          echo $CONDA/bin >> $GITHUB_PATH
-          conda env create -f daenv.yml
+      - name: Update environment
+        run: conda env update -n daenv -f daenv.yml
+        if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Download da_data_repo
         run: |
